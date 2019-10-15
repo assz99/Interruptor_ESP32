@@ -26,7 +26,7 @@ volatile int estado_rele1 = 0;
 volatile int estado_rele2 = 0;
 volatile int trava_touch1 = 0;
 volatile int trava_touch2 = 0;
-
+String path = "/quarto1";
 FirebaseData firebaseData;
 
 void setup()
@@ -78,55 +78,88 @@ void setup()
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
   Firebase.reconnectWiFi(true);
 
-  Firebase.setInt(firebaseData, "/rele1", 0);
-  Firebase.setInt(firebaseData, "/rele2", 0);
+  Firebase.setInt(firebaseData, path +"/rele1", 0);
+  Firebase.setInt(firebaseData, path +"/rele2", 0);
+
+  if (!Firebase.beginStream(firebaseData,"/quarto1"))
+  {
+    Serial.println("> FALHO");
+    Serial.println("> ERRO: " + firebaseData.errorReason());
+    Serial.println();
+  }
+  else
+  {
+    Serial.println("> PASSOU");
+    Serial.println("------------------------------------");
+    Serial.println();
+  }
+
+  Firebase.setStreamCallback(firebaseData, streamCallback, streamTimeoutCallback);
+
   attachInterrupt(digitalPinToInterrupt(sensor_touch1), touch1, RISING);
   attachInterrupt(digitalPinToInterrupt(sensor_touch2), touch2, RISING);
+  RGB();
+}
+
+void streamTimeoutCallback(bool timeout)
+{
+  if (timeout)
+  {
+    Serial.println();
+    Serial.println("> Stream 1 acabou o tempo, resumindo o streaming...");
+    Serial.println();
+  }
+}
+
+void streamCallback(StreamData data)
+{
+  RGB();
+  rele_firebase();
 }
 
 void RGB()
 {
-  Firebase.getInt(firebaseData, "/ledred1");
+  Firebase.getInt(firebaseData, path +"/ledred1");
   valor = firebaseData.intData();
   Serial.print("Valor LEDred1=");
   Serial.println(valor);
   ledcWrite(0, valor);
-  Firebase.getInt(firebaseData, "/ledgreen1");
+  Firebase.getInt(firebaseData, path +"/ledgreen1");
   valor = firebaseData.intData();
   Serial.print("Valor LEDgreen1=");
   Serial.println(valor);
   ledcWrite(1, valor);
-  Firebase.getInt(firebaseData, "/ledblue1");
+  Firebase.getInt(firebaseData, path +"/ledblue1");
   valor = firebaseData.intData();
   Serial.print("Valor LEDblue1=");
   Serial.println(valor);
   ledcWrite(2, valor);
-  Firebase.getInt(firebaseData, "/ledred2");
+  Firebase.getInt(firebaseData, path +"/ledred2");
   valor = firebaseData.intData();
   Serial.print("Valor LEDred2=");
   Serial.println(valor);
   ledcWrite(3, valor);
-  Firebase.getInt(firebaseData, "/ledgreen2");
+  Firebase.getInt(firebaseData, path +"/ledgreen2");
   valor = firebaseData.intData();
   Serial.print("Valor LEDgreen2=");
   Serial.println(valor);
   ledcWrite(4, valor);
-  Firebase.getInt(firebaseData, "/ledblue2");
+  Firebase.getInt(firebaseData, path +"/ledblue2");
   valor = firebaseData.intData();
   Serial.print("Valor LEDblue2=");
   Serial.println(valor);
   ledcWrite(5, valor);
-  Firebase.getInt(firebaseData, "/ledred3");
+  Firebase.getInt(firebaseData, path +"/ledred3");
   valor = firebaseData.intData();
   Serial.print("Valor LEDred3=");
   Serial.println(valor);
   ledcWrite(6, valor);
-  Firebase.getInt(firebaseData, "/ledgreen3");
+  Firebase.getInt(firebaseData, path +"/ledgreen3");
   valor = firebaseData.intData();
   Serial.print("Valor LEDgreen3=");
   Serial.println(valor);
   ledcWrite(7, valor);
-  Firebase.getInt(firebaseData, "/ledblue3");
+  Firebase.getInt(firebaseData, path +"/ledblue3");
   valor = firebaseData.intData();
   Serial.print("Valor LEDblue3=");
   Serial.println(valor);
@@ -169,7 +202,7 @@ void touch2()
 
 void touch1_envio(){
   if (trava_touch1 == 1) {
-    Firebase.setInt(firebaseData, "/rele1", estado_rele1);
+    Firebase.setInt(firebaseData, path +"/rele1", estado_rele1);
     Serial.println("Enviado");
     trava_touch1 = 0;
   }
@@ -177,7 +210,7 @@ void touch1_envio(){
 
 void touch2_envio() {
   if (trava_touch2 == 1) {
-    Firebase.setInt(firebaseData, "/rele2", estado_rele2);
+    Firebase.setInt(firebaseData, path +"/rele2", estado_rele2);
     Serial.println("Enviado");
     trava_touch2 = 0;
   }
@@ -206,7 +239,7 @@ void desliga_led2(){
   }
 
 void rele_firebase() {
-  Firebase.getInt(firebaseData, "/rele1");
+  Firebase.getInt(firebaseData, path +"/rele1");
   if (firebaseData.intData() != estado_rele1) {
     if (estado_rele1 == 0) {
       estado_rele1 = 1;
@@ -219,7 +252,7 @@ void rele_firebase() {
     Serial.println(estado_rele1);
     digitalWrite(rele1, estado_rele1);
   }
-  Firebase.getInt(firebaseData, "/rele2");
+  Firebase.getInt(firebaseData,path + "/rele2");
   if (firebaseData.intData() != estado_rele2) {
     if (estado_rele2 == 0) {
       desliga_led2();
@@ -236,10 +269,10 @@ void rele_firebase() {
 
 void loop()
 {
-  Serial.println("OLA");
-  RGB();
+  //Serial.println("OLA");
+ 
 
   touch1_envio();
   touch2_envio();
-  rele_firebase();
+  //rele_firebase();
 }
