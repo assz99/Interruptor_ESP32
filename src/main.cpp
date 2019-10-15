@@ -16,14 +16,14 @@
 #define ledred3 18
 #define ledgreen3 19
 #define ledblue3 21
-#define rele1 3
-#define rele2 1
+#define rele1 13
+#define rele2 12
 #define sensor_touch1 22
 #define sensor_touch2 23
 
 int valor;
 volatile int estado_rele1 = 0;
-volatile int estado_rele2 = 0;~
+volatile int estado_rele2 = 0;
 volatile int trava_touch1 = 0;
 volatile int trava_touch2 = 0;
 
@@ -44,9 +44,9 @@ void setup()
   pinMode(rele1, OUTPUT);
   pinMode(rele2, OUTPUT);
   pinMode(sensor_touch1, INPUT);
-  pinMode(sensor_touch1, INPUT);
-  digitalWrite(rele1,LOW);
-  digitalWrite(rele2,LOW);
+  pinMode(sensor_touch2, INPUT);
+  digitalWrite(rele1, HIGH);
+  digitalWrite(rele2  , HIGH);
 
   ledcAttachPin(ledred1, 0);
   ledcSetup(0, 1000, 8);
@@ -130,7 +130,7 @@ void RGB()
   valor = firebaseData.intData();
   Serial.print("Valor LEDblue3=");
   Serial.println(valor);
-  ledcWrite(8, valor); 
+  ledcWrite(8, valor);
 }
 
 void touch1()
@@ -138,68 +138,95 @@ void touch1()
   if (estado_rele1 == 0)
   {
     estado_rele1 = 1;
-  }else if (estado_rele1 == 1)
+    desliga_led1();
+  } else if (estado_rele1 == 1)
   {
     estado_rele1 = 0;
+    liga_led1();
   }
   Serial.print("Rele1 =");
   Serial.println(estado_rele1);
   digitalWrite(rele1, estado_rele1);
-  trava_touch1 =0;
-  
+  trava_touch1 = 1;
 }
 void touch2()
 {
-  
   if (estado_rele2 == 0)
   {
     estado_rele2 = 1;
-  }else if (estado_rele2 == 1)
+    desliga_led2();
+  } else if (estado_rele2 == 1)
   {
     estado_rele2 = 0;
+    liga_led2();
   }
-  
+
   Serial.print("Rele2 =");
   Serial.println(estado_rele2);
   digitalWrite(rele2, estado_rele2);
   trava_touch2 = 1;
-  
 }
 
 void touch1_envio(){
-if(trava_touch1==1){
-  Firebase.setInt(firebaseData,"/rele1",estado_rele1);
-  Serial.println("Enviado");
-  trava_touch1 = 0;
-}
-}
-
-void touch2_envio(){
-  if(trava_touch2==1){
-  Firebase.setInt(firebaseData,"/rele2",estado_rele2);
-  Serial.println("Enviado");
-  trava_touch2 =0;
+  if (trava_touch1 == 1) {
+    Firebase.setInt(firebaseData, "/rele1", estado_rele1);
+    Serial.println("Enviado");
+    trava_touch1 = 0;
   }
 }
 
-void rele_firebase(){
-  Firebase.getInt(firebaseData,"/rele1");
-  if(firebaseData.intData() != estado_rele1){
-    if(estado_rele1 == 0){
+void touch2_envio() {
+  if (trava_touch2 == 1) {
+    Firebase.setInt(firebaseData, "/rele2", estado_rele2);
+    Serial.println("Enviado");
+    trava_touch2 = 0;
+  }
+}
+
+void liga_led1(){
+  ledcWrite(0,255);
+  ledcWrite(1,0);
+  ledcWrite(2,255);
+  }
+void desliga_led1(){
+  ledcWrite(0,0);
+  ledcWrite(1,255);
+  ledcWrite(2,255);
+  }
+void liga_led2(){
+  ledcWrite(6,255);
+  ledcWrite(7,0);
+  ledcWrite(8,255);
+  }
+  
+void desliga_led2(){
+  ledcWrite(6,0);
+  ledcWrite(7,255);
+  ledcWrite(8,255);
+  }
+
+void rele_firebase() {
+  Firebase.getInt(firebaseData, "/rele1");
+  if (firebaseData.intData() != estado_rele1) {
+    if (estado_rele1 == 0) {
       estado_rele1 = 1;
-    }else if(estado_rele1 == 1){
-      estado_rele1=0;
+      desliga_led1();
+    } else if (estado_rele1 == 1) {
+      estado_rele1 = 0;
+      liga_led1();
     }
     Serial.print("Rele1 =");
     Serial.println(estado_rele1);
     digitalWrite(rele1, estado_rele1);
   }
-  Firebase.getInt(firebaseData,"/rele2");
-  if(firebaseData.intData() != estado_rele2){
-    if(estado_rele2 == 0){
+  Firebase.getInt(firebaseData, "/rele2");
+  if (firebaseData.intData() != estado_rele2) {
+    if (estado_rele2 == 0) {
+      desliga_led2();
       estado_rele2 = 1;
-    }else if(estado_rele2 == 1){
-      estado_rele2=0;
+    } else if (estado_rele2 == 1) {
+      estado_rele2 = 0;
+      liga_led2();
     }
     Serial.print("Rele2 =");
     Serial.println(estado_rele2);
@@ -208,10 +235,11 @@ void rele_firebase(){
 }
 
 void loop()
-{ 
+{
   Serial.println("OLA");
-  RGB(); 
-  rele_firebase();
+  RGB();
+
   touch1_envio();
   touch2_envio();
+  rele_firebase();
 }
